@@ -1,0 +1,152 @@
+
+*
+{
+    padding:0;
+    margin:0;
+}
+
+html, body, #main {
+    font-family:  'Helvetica neue', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    line-height: 14px;
+    height: 100%;
+    width: 100%;
+}
+
+#main
+{
+    position: relative;
+}
+
+#Map
+{
+}
+
+#refresh
+{
+    text-decoration: none;
+    padding: 4px;
+    background-color: #444;
+    border: 1px solid #222;
+    display: block;
+    position: absolute;
+    padding: 3px;
+    top: 25px;
+    right:10px;
+}
+
+#tripsList
+{
+    margin-top: 20px;
+}
+
+a, a:active, a:visited, a:link
+{
+    color: white;
+}
+
+.HUD
+{
+    position: absolute;
+    border: 1px solid silver;
+    box-shadow: 0px 0px 5px #444;
+    background-color: transparent;
+    background-image: url(../images/hudBackground.png);
+    background-repeat: repeat;
+    min-width: 100px; 
+    width: auto;
+    height: auto;
+    color: white;
+    top: 0;
+    left: 0;
+}
+.HUD h2
+{
+    background-color: #555;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 14px;
+    padding: 3px;
+    cursor: move;
+    position: relative;
+}
+.HUD h2 .minimize
+{
+    position: absolute;
+    height: 1px;
+    width: 5px;
+    border: 1px solid silver;
+    top: 8px;
+    right: 5px;
+    cursor: pointer;
+}
+.HUD div
+{
+    padding: 10px;
+}
+
+.HUD.minimized
+{
+    height: 20px;
+    overflow: hidden;
+    opacity:0.5;
+}
+
+#performance
+{
+    width: 300px;
+    top: 11px;
+    left: 661px;
+}
+
+#actions
+{
+    top: 8px;
+    left: 8px;
+}
+
+#players
+{
+    top: 9px;
+    left: 307px;
+}
+
+#trips
+{
+    top: 10px;
+    left: 457px;
+}
+
+#memory
+{
+    overflow: hidden;
+    position: static;
+    height: 20px;
+    line-height: 20px;
+}
+
+#memoryText
+{
+    z-index: 1;
+}
+
+#memoryGraph
+{
+    width:280px;
+    height:100%;
+    background: #32ff51; /* Old browsers */
+    background: -moz-linear-gradient(left,  #32ff51 0%, #ff4747 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, right top, color-stop(0%,#32ff51), color-stop(100%,#ff4747)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(left,  #32ff51 0%,#ff4747 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(left,  #32ff51 0%,#ff4747 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(left,  #32ff51 0%,#ff4747 100%); /* IE10+ */
+    background: linear-gradient(to right,  #32ff51 0%,#ff4747 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#32ff51', endColorstr='#ff4747',GradientType=1 ); /* IE6-9 */
+    z-index: 0;
+}
+
+.trip
+{
+    display: block;
+}
+
