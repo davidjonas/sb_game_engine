@@ -41,8 +41,19 @@ Maps.prototype.initializeMap = function(center, id) {
         var mapObject = new google.maps.Map(document.getElementById(id), mapOptions);
         mapObject.setOptions({ styles: this.map_style });
         
-        this.maps.push({id: id, map:mapObject});
+        var overlay = new google.maps.OverlayView();
+        overlay.draw = function() {};
+        overlay.setMap(mapObject);
+        
+        this.maps.push({id: id, map:mapObject, overlay:overlay});
 };
+
+Maps.prototype.getLatLng = function (map, x, y)
+{
+    var proj = map.overlay.getProjection();
+    var point = new google.maps.Point(x,y);
+    return proj.fromDivPixelToLatLng(point);
+}
 
 Maps.prototype.getMapById = function (){
     

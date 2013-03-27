@@ -1,5 +1,6 @@
 var dragging = false;
 var selectedHud = null;
+var altKey = false;
 var mousediff = {x: 0, y:0};
 var positions = {
   performance:  {x: 661, y:11},
@@ -168,6 +169,13 @@ function refreshPlayerList(player)
 }
 
 
+function addTarget(lat, lng)
+{
+  game.addTarget(lat, lng, $("#targetValue").attr('value'));
+  console.log("Adding new target at: " + lat + ", " + lng + " with value: " + $("#targetValue").attr('value'));
+  $("#add_target").remove();
+}
+
 //On load      
 $(function ()
   {
@@ -200,6 +208,13 @@ $(function ()
     //Ask for the first update of the list of trips.
     game.listTrips();
     
+    game.bind("targetAdded", function (target){
+          gmaps.addMarker(target.value, target.location, gmaps.maps[0].map, "/images/geomarker2.png");
+          console.log("Target " + target.value + " added at " + target.location.lat + ", " + target.location.lng );
+    });
+    
+    game.listTargets();
+    
     //Ask for memory usage information every second
     setInterval(function(){game.socket.emit("memoryUsage")}, 1000);
     
@@ -217,4 +232,43 @@ $(function ()
             markerHash[player.id].setPosition(new google.maps.LatLng(location.lat, location.lng));
         }
     });
+    
+      game.bind("playerDisconnected", function (player) {
+          if (markerHash[player.id] != undefined)
+          {
+            markerHash[player.id].setMap(null);
+            delete markerHash[player.id];
+          }
+      });
+      
+      google.maps.event.addListener(gmaps.maps[0].map, 'click', function (evt){
+        console.log(evt);
+        if(altKey)
+        {
+          var location = evt.latLng;
+          var dialog = $('<div class="HUD" id="add_target" style="top: '+evt.pixel.y+'px; left: '+evt.pixel.x+'px"><h2>Add target</h2><div>Value: <input type="text" id="targetValue"/> <input type="button" value="Add" onClick="addTarget('+location.lat()+', '+location.lng()+');"/></div></div>');
+          $('#main').append(dialog);
+          return true;
+        }
+        else
+        {
+          return true;
+        }
+      });
+      
+      //Check for alt key pressing
+      $(document).bind('keydown', function (evt)
+                       {
+                          if(evt.which === 18)
+                          {
+                            altKey = true;
+                          }
+                        });
+            $(document).bind('keyup', function (evt)
+                       {
+                          if(evt.which === 18)
+                          {
+                            altKey = true;
+                          }
+                        });
 });

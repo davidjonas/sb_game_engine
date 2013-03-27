@@ -1,4 +1,6 @@
 var started = false;
+var tracking = false;
+var nickname = ""
 
 $(function ()
 {
@@ -10,15 +12,25 @@ var start = function ()
     if (!started)
     {
         $("#button").addClass('active');
-        game.registerPlayer("MobileClient" + Date.now());
-        game.socket = io.connect(game.server);
-        game.startTracking();
+        nickname = "MobileClient" + Date.now()
+        game.registerPlayer(nickname);
+        if (!tracking)
+        {
+            game.startTracking();
+            tracking = true;
+        }
         started = true;
     }
     else
     {
         $("#button").removeClass('active');
-        game.socket.disconnect();
+        for (var p in game.players)
+        {
+            if (game.players[p].nickname == nickname)
+            {
+                game.killPlayer(game.players[p])
+            }
+        }
         started=false;
     }
 };
