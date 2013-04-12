@@ -313,6 +313,29 @@ function updateLocationHandler(player, location, socket, recordTrip)
         }
     }
     
+    for (var p in players)
+    {
+        if(players[p] != player)
+        {
+            var distance = calculateDistance(player.getLocation(), players[p].getLocation(), 'm');
+            log("player at " + distance + " meters.");
+           
+            if (distance < range)
+            {
+                log("found a player in range")
+                var socks = io.sockets.clients();
+                for (var s in socks)
+                {
+                    if (socks[s].id == player.getSocket())
+                    {
+                        log("emitting in range event.")
+                        socks[s].emit("playerInRange", {player: players[p], distance:distance});
+                    }
+                }
+            }   
+        }
+    }
+    
     if (recordTrip !== null)
     {
         db.addStep({tripId:recordTrip , playerId:player.getId() ,location:location, timestamp:Date.now()});

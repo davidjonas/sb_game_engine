@@ -1,6 +1,7 @@
 var started = false;
 var tracking = false;
-var nickname = ""
+var nickname = "";
+var sounds = [];
 
 $(function ()
 {
@@ -15,17 +16,15 @@ var start = function ()
         nickname = "MobileClient" + Date.now()
         game.registerPlayer(nickname);
         
-        game.bind("playerInRange", function (data) {
-            console.log("player in range");
-            //$("#info").text( data.player.nickname + " - " + data.distance);
+        game.bind("targetInRange", function (data) {
             var dist = Math.round(data.distance);
-            var alarm = 0;
-            if (dist < 10)
+            var volume = 0;
+            if (dist < 20)
             {
-                alarm = 100 - (dist * 10);
+                volume = 100  - dist*5;
             }
-            
-            $("#button").css({"box-shadow":"inset 0px 0px " + alarm + "px #f00"});
+            $("#info").text( data.target.value + " - " + volume);
+            updateSound(data.target.value, volume);
         });
         
         

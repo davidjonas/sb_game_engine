@@ -1,5 +1,6 @@
 var dragging = false;
 var selectedHud = null;
+var blur = 0;
 var altKey = false;
 var mousediff = {x: 0, y:0};
 var positions = {
@@ -9,6 +10,21 @@ var positions = {
   trips: {x: 457, y:10}
 };
 var markerHash = {}
+
+function animateBlur ()
+{
+  blur = Math.floor((Math.random()*5)+1);
+  if (blur > 4)
+  {
+    var amount = Math.floor((Math.random()*4)+1);
+    $("#Map").css('-webkit-filter', "blur(4px)");
+  }
+  else
+  {
+    $("#Map").css('-webkit-filter', "blur(0px)");
+  }
+  
+}
 
 //Set a cookie
 var setCookie = function (name,value,days)
@@ -220,7 +236,7 @@ $(function ()
     
     activateHudInterface();
     loadHudPositions();
-    gmaps.initializeMap(gmaps.defaultCenter, 'Map');
+    gmaps.initializeMap({lat: 51.934485, lng: 4.465822}, 'Map');
     
     game.bind('updateLocation', function (player, location) {
         if (markerHash[player.id] == undefined)
@@ -271,4 +287,6 @@ $(function ()
                             altKey = true;
                           }
                         });
+            
+      //setInterval(animateBlur,1000);
 });
