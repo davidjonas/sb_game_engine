@@ -1,5 +1,6 @@
 var dragging = false;
 var selectedHud = null;
+var hudon = true;
 var blur = 0;
 var altKey = false;
 var mousediff = {x: 0, y:0};
@@ -24,6 +25,20 @@ function animateBlur ()
     $("#Map").css('-webkit-filter', "blur(0px)");
   }
   
+}
+
+toggleHud = function ()
+{
+  if (hudon)
+  {
+    $(".HUD").hide();
+    hudon = false;
+  }
+  else
+  {
+    $('.HUD').show();
+    hudon = true;
+  }
 }
 
 //Set a cookie
@@ -285,6 +300,10 @@ $(function ()
                           if(evt.which === 18)
                           {
                             altKey = true;
+                          }
+                          else if (evt.which === 88)
+                          {
+                            toggleHud();
                           }
                         });
             
