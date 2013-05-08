@@ -2,15 +2,18 @@ var dragging = false;
 var selectedHud = null;
 var hudon = true;
 var blur = 0;
+var mouse = {x: 0, y:0};
 var altKey = false;
 var mousediff = {x: 0, y:0};
 var positions = {
   performance:  {x: 661, y:11},
   actions: {x: 8, y:8},
   players: {x: 307, y:9},
-  trips: {x: 457, y:10}
+  trips: {x: 457, y:10},
+  commands: {x: 8, y:100}
 };
 var markerHash = {}
+var targetHash = {}
 
 function animateBlur ()
 {
@@ -138,6 +141,8 @@ function activateHudInterface()
         saveHudPositions();
     });
     $(window).mousemove(function(ev) {
+        mouse.x = ev.pageX;
+        mouse.y = ev.pageY;
         if (dragging == true)
         {
             $(selectedHud).css('left', ev.pageX + mousediff.x);
@@ -202,7 +207,7 @@ function refreshPlayerList(player)
 
 function addTarget(lat, lng)
 {
-  game.addTarget(lat, lng, $("#targetValue").attr('value'));
+  game.addTarget(lat, lng, $("#targetValue").attr('value'), parseInt($("#targetRange").attr('value')));
   console.log("Adding new target at: " + lat + ", " + lng + " with value: " + $("#targetValue").attr('value'));
   $("#add_target").remove();
 }
@@ -240,8 +245,33 @@ $(function ()
     game.listTrips();
     
     game.bind("targetAdded", function (target){
-          gmaps.addMarker(target.value, target.location, gmaps.maps[0].map, "/images/geomarker2.png");
-          console.log("Target " + target.value + " added at " + target.location.lat + ", " + target.location.lng );
+          targetHash[target._id] = gmaps.addMarker(target.value, target.location, gmaps.maps[0].map, "/images/geomarker2.png");
+          google.maps.event.addListener(targetHash[target._id] , 'click', function() {
+             console.log(target._id);
+             console.log(targetHash[target._id]);
+              var r=confirm("Do you want to delete this target?");
+              if (r==true)
+              {
+                game.removeTarget(target);
+              }
+            });
+    });
+    
+    game.bind("targetRemoved", function (target){
+        if (targetHash[target._id] != undefined)
+          {
+            console.log(targetHash[target._id]);
+            //TODO: Everything works till here but the marker does not disappear. It just becomes a bit brighter.
+            //There is another weird rendering of the marker on the bottom that can be seen by running:
+            //targetHash['51839c550dbda5ec5a00000a'].setAnimation(google.maps.Animation.BOUNCE);
+            //Maybe Markers are being added too early.
+            targetHash[target._id].setMap(null);
+            delete targetHash[target._id];
+          }
+          else
+          {
+            console.log("Could not find targetHash "+target._id);
+          }
     });
     
     game.listTargets();
@@ -251,12 +281,20 @@ $(function ()
     
     activateHudInterface();
     loadHudPositions();
-    gmaps.initializeMap({lat: 51.934485, lng: 4.465822}, 'Map');
+    //gmaps.initializeMap({lat: 51.903288, lng: 4.484804}, 'Map');
+    gmaps.initializeMap(gmaps.defaultCenter, 'Map');
     
     game.bind('updateLocation', function (player, location) {
         if (markerHash[player.id] == undefined)
         {
             markerHash[player.id]  = gmaps.addMarker(player.nickname, location, gmaps.maps[0].map, "/images/geomarker.png");
+            google.maps.event.addListener(markerHash[player.id] , 'click', function() {
+              var send = function (p) {game.sendMessage(p, $('#textmessage').attr('value')); $('#send_msg').remove();};
+              var dialog = $('<div class="HUD" id="send_msg" style="top: '+mouse.x+'px; left: '+mouse.y+'px"><h2>Send Command</h2><div id="textmessageform"><input type="text" id="textmessage"/></div></div>');
+              $('#main').append(dialog);
+              var button = $('<input type="button" value="send" />').click(function (evt) {send(player)});
+              $("#textmessageform").append(button);
+            });
         }
         else
         {
@@ -277,7 +315,7 @@ $(function ()
         if(altKey)
         {
           var location = evt.latLng;
-          var dialog = $('<div class="HUD" id="add_target" style="top: '+evt.pixel.y+'px; left: '+evt.pixel.x+'px"><h2>Add target</h2><div>Value: <input type="text" id="targetValue"/> <input type="button" value="Add" onClick="addTarget('+location.lat()+', '+location.lng()+');"/></div></div>');
+          var dialog = $('<div class="HUD" id="add_target" style="top: '+evt.pixel.y+'px; left: '+evt.pixel.x+'px"><h2>Add target</h2><div>Value: <input type="text" id="targetValue"/><input type="text" id="targetRange" value="40"/><input type="button" value="Add" onClick="addTarget('+location.lat()+', '+location.lng()+');"/></div></div>');
           $('#main').append(dialog);
           return true;
         }

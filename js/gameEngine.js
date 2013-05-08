@@ -36,6 +36,7 @@ var GameEngine = function () {
     this.targetInRangeCallbacks =[];
     this.playerInRangeCallbacks =[];
     this.listTripsCallbacks =[];
+    this.textMessageCallbacks=[];
     
     
     //socketEvents
@@ -48,13 +49,14 @@ var GameEngine = function () {
     this.socket.on('recordTrip_stop', GameEvents.onRecordStop);
     this.socket.on('players', GameEvents.listPlayers);
     this.socket.on('targetAdded', GameEvents.targetAdded);
-    this.socket.on('tagertRemoved', GameEvents.targetRemoved);
+    this.socket.on('targetRemoved', GameEvents.targetRemoved);
     this.socket.on('targetInRange', GameEvents.targetInRange);
     this.socket.on('playerInRange', GameEvents.playerInRange);
     this.socket.on('refresh',  function () {window.location.reload();});
     this.socket.on('listTrips', GameEvents.listTrips);
     this.socket.on('listTargets', GameEvents.listTargets);
     this.socket.on('requestRecording', GameEvents.requestRecording);
+    this.socket.on('textMessage', GameEvents.textMessage);
     
     //get current players
     this.socket.emit("getPlayers");
@@ -116,7 +118,11 @@ GameEngine.prototype.bind = function (eventName, callback)
         
         case 'listTrips':
             this.listTripsCallbacks.push(callback);
+            break;
 
+        case 'textMessage':
+            this.textMessageCallbacks.push(callback);
+        
         default:
             this.socket.on(eventName, callback)
             break;
@@ -152,10 +158,22 @@ GameEngine.prototype.killPlayer = function(player)
     this.socket.emit('killPlayer', player);
 }
 
-GameEngine.prototype.addTarget = function(lat, lng, value)
+GameEngine.prototype.sendMessage = function(player, message)
 {
-    console.log("Adding new target " + name);
-    this.socket.emit('addTarget', {location:{lat: lat, lng:lng}, value:value});
+    console.log("sending message to: " + player.nickname);
+    this.socket.emit("sendTextMessageTo", {player: player, message: message});
+}
+
+GameEngine.prototype.broadcastMessage = function (message)
+{
+    console.log("sending broadcast message");
+    this.socket.emit("sendBroadcastTextMessage", {message: message});
+}
+
+GameEngine.prototype.addTarget = function(lat, lng, value, range)
+{
+    console.log("Adding new target");
+    this.socket.emit('addTarget', {location:{lat: lat, lng:lng}, value:value, range:range});
 }
 
 GameEngine.prototype.listTargets = function ()
@@ -164,10 +182,10 @@ GameEngine.prototype.listTargets = function ()
     this.socket.emit('listTargets');
 }
 
-GameEngine.prototype.removeTarget = function(name)
+GameEngine.prototype.removeTarget = function(target)
 {
-    console.log("Removing target " + name);
-    this.socket.emit('removeTarget', {name: name});
+    console.log("Removing target " + target.value);
+    this.socket.emit('removeTarget', {target: target});
 }
 
 GameEngine.prototype.startTracking = function ()
@@ -331,12 +349,15 @@ GameEvents.targetAdded = function (data)
 }
 
 GameEvents.targetRemoved = function (data)
-{
-    var targetIndex = game.targets.indexOf(data);
-    if (targetIndex != -1)
+{   
+    for (var t in game.targets)
     {
-        game.targets.splice(targetIndex,1);
+        if (game.targets[t]._id == data._id)
+        {
+            game.targets.splice(t,1);
+        }
     }
+    
     for (var i in game.targetRemovedCallbacks)
     {
         game.targetRemovedCallbacks[i](data);
@@ -363,9 +384,16 @@ GameEvents.requestRecording = function (data)
 {
     if (game.acceptRecordingRequests)
     {
-         game.recordTrip(data.tripId);
+        game.recordTrip(data.tripId);
     }
-   
+}
+
+GameEvents.textMessage = function (data)
+{
+    for (var i in game.textMessageCallbacks)
+    {
+        game.textMessageCallbacks[i](data);
+    }
 }
 
 var game = new GameEngine();

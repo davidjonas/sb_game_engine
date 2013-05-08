@@ -101,14 +101,18 @@ io.sockets.on('connection', function(socket) {
     });
     
     socket.on('removeTarget', function (data) {
+        log("removing target "+ data.target.value)
+        db.removeTarget(data.target);
         for (var i in targets)
         {
-            if (targets[i] == data)
+            if (targets[i].value == data.target.value && targets[i].location.lat == data.target.location.lat && targets[i].location.lng == data.target.location.lng)
             {
+                log("found the target on the list. deleting.")
                 targets.splice(i, 1);
             }
         }
-        io.sockets.emit('targetRemoved', data);
+        log("Emitting remove broadcast");
+        io.sockets.emit('targetRemoved', data.target);
     });
     
     socket.on('recordTrip', function(data){
@@ -173,6 +177,29 @@ io.sockets.on('connection', function(socket) {
         socket.emit('players', {players: list});
     });
     
+    socket.on('sendTextMessageTo', function(data){
+        log('Sending message to player: ' + data.player.id);
+        for(p in players)
+        {
+            if (players[p].id == data.player.id )
+            {
+                var socks = io.sockets.clients();
+                for (var i in socks)
+                {
+                    if  (socks[i].id == players[p].getSocket())
+                    {
+                        socks[i].emit('textMessage', {message:data.message});
+                    }
+                }
+            }
+        }
+    });
+    
+    socket.on('sendBroadcastTextMessage', function(data){
+        log('Sending broadcast message');
+        io.sockets.emit('textMessage', {message:data.message});
+    });
+    
     socket.on('requestRecording', function (data) {
             log("received request to record a trip for another player.");
             var playerId = data.playerId;
@@ -201,7 +228,8 @@ io.sockets.on('connection', function(socket) {
     socket.on('updateLocation', function(data){
         if(registered === false || player === null)
         {
-            register("Guest"+players.length);
+            //NOTE: This code registers a new player if the one sending the location is not registered yet. Commented because we do no want to allow this to happen
+            //register("Guest"+players.length);
         }
         else
         {

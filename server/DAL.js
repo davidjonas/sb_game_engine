@@ -67,6 +67,17 @@ DAL.prototype.addTarget = function (target)
                       });
 }
 
+DAL.prototype.removeTarget = function (target)
+{
+    this.db.targets.remove({value: target.value, location: target.location, range: target.range}, function (err, status)
+                      {
+                        if (err)
+                        {
+                            console.log("Error occured while trying to save the target");
+                        }
+                      });
+}
+
 DAL.prototype.getTargets = function(callback) {
     this.db.targets.find(callback);
 }

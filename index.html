@@ -35,6 +35,13 @@
 				</div>
 			</div>
 			
+			<div class="HUD" id="commands">
+				<h2>Global command</h2>
+				<div>
+				    Command: <input type="text" id="commandText"/> <input type="button" value="Send" onClick="game.broadcastMessage($('#commandText').attr('value'));"/>
+				</div>
+			</div>
+			
 			<div class="HUD" id="players">
 				<h2>Players online</h2>
 				<div id="playerList">

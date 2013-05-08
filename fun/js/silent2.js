@@ -19,14 +19,17 @@ var start = function ()
         game.bind("targetInRange", function (data) {
             var dist = Math.round(data.distance);
             var volume = 0;
-            if (dist < 20)
+            var active_range = data.range;
+            if (dist < active_range)
             {
-                volume = 100  - dist*5;
+                volume = 100  - dist*(100/active_range);
             }
             $("#info").text( data.target.value + " - " + volume);
-            updateSound(data.target.value, volume);
+            if (android)
+            {
+                android.updateSound(data.target.value, volume);
+            }
         });
-        
         
         if (!tracking)
         {
