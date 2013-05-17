@@ -1,0 +1,6 @@
+#!/bin/sh
+
+cd ~/mongoBackup
+mongodump
+scp -r mongoBackup david@outside.mediawerf.net:~/
+ssh david@outside.mediawerf.net 'bash -s /var/www/localsync'
