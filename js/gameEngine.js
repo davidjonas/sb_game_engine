@@ -195,10 +195,11 @@ GameEngine.prototype.broadcastMessage = function (message)
     this.socket.emit("sendBroadcastTextMessage", {message: message});
 }
 
-GameEngine.prototype.addTarget = function(lat, lng, value, range)
+GameEngine.prototype.addTarget = function(lat, lng, value, range, type)
 {
+    type = type || "normal";
     console.log("Adding new target");
-    this.socket.emit('addTarget', {location:{lat: lat, lng:lng}, value:value, range:range});
+    this.socket.emit('addTarget', {location:{lat: lat, lng:lng}, value:value, range:range, type:type});
 }
 
 GameEngine.prototype.listTargets = function ()

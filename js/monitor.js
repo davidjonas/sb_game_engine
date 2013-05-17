@@ -227,8 +227,8 @@ function refreshPlayerList(player)
 
 function addTarget(lat, lng)
 {
-  game.addTarget(lat, lng, $("#targetValue").attr('value'), parseInt($("#targetRange").attr('value')));
-  console.log("Adding new target at: " + lat + ", " + lng + " with value: " + $("#targetValue").attr('value'));
+  game.addTarget(lat, lng, $("#targetValue").attr('value'), parseInt($("#targetRange").attr('value')), $("#targetType").attr('value'));
+  console.log("Adding new target at: " + lat + ", " + lng + " with value: " + $("#targetValue").attr('value') + " with type:" + $("#targetType").attr('value'));
   $("#add_target").remove();
 }
 
@@ -342,7 +342,7 @@ $(function ()
         if(altKey)
         {
           var location = evt.latLng;
-          var dialog = $('<div class="HUD" id="add_target" style="top: '+evt.pixel.y+'px; left: '+evt.pixel.x+'px"><h2>Add target</h2><div>Value: <input type="text" id="targetValue"/><input type="text" id="targetRange" value="40"/><input type="button" value="Add" onClick="addTarget('+location.lat()+', '+location.lng()+');"/></div></div>');
+          var dialog = $('<div class="HUD" id="add_target" style="top: '+evt.pixel.y+'px; left: '+evt.pixel.x+'px"><h2>Add target</h2><div>Value: <input type="text" id="targetValue"/><input type="text" id="targetRange" value="40"/><input type="text" id="targetType" value="normal"/><input type="button" value="Add" onClick="addTarget('+location.lat()+', '+location.lng()+');"/></div></div>');
           $('#main').append(dialog);
           return true;
         }
