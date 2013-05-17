@@ -55,6 +55,15 @@ Maps.prototype.getLatLng = function (map, x, y)
     return proj.fromDivPixelToLatLng(point);
 }
 
+Maps.prototype.convertToXY = function (map, location)
+{
+    var proj = map.overlay.getProjection();
+    console.log("converting.....");
+    console.log(location);
+    var point = new google.maps.LatLng(location.lat , location.lng);
+    return proj.fromLatLngToDivPixel(point);
+}
+
 Maps.prototype.getMapById = function (){
     
 };

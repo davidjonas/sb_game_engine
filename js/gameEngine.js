@@ -37,6 +37,10 @@ var GameEngine = function () {
     this.playerInRangeCallbacks =[];
     this.listTripsCallbacks =[];
     this.textMessageCallbacks=[];
+    this.updatePlayerCallbacks = [];
+    this.updateBatteryCallbacks = [];
+    this.gpsStatusCallbacks = [];
+    
     
     
     //socketEvents
@@ -57,6 +61,9 @@ var GameEngine = function () {
     this.socket.on('listTargets', GameEvents.listTargets);
     this.socket.on('requestRecording', GameEvents.requestRecording);
     this.socket.on('textMessage', GameEvents.textMessage);
+    this.socket.on('updatePlayer', GameEvents.updatePlayer);
+    this.socket.on('updateBattery', GameEvents.updateBattery);
+    this.socket.on('gpsStatus', GameEvents.gpsStatus);
     
     //get current players
     this.socket.emit("getPlayers");
@@ -122,6 +129,19 @@ GameEngine.prototype.bind = function (eventName, callback)
 
         case 'textMessage':
             this.textMessageCallbacks.push(callback);
+            break;
+        
+        case 'updatePlayer':
+            this.updatePlayerCallbacks.push(callback);
+            break;
+        
+        case 'updateBattery':
+            this.updateBatteryCallbacks.push(callback);
+            break;
+        
+        case 'gpsStatus':
+            this.gpsStatusCallbacks.push(callback);
+            break;
         
         default:
             this.socket.on(eventName, callback)
@@ -132,6 +152,11 @@ GameEngine.prototype.bind = function (eventName, callback)
 GameEngine.prototype.registerPlayer = function (nickname)
 {
     this.socket.emit('register', {nickname: nickname});
+};
+
+GameEngine.prototype.addSoundToPlayer = function (player, sound)
+{
+    game.socket.emit("addSoundToPlayer", {"playerId":player.id, "sound": sound});  
 };
 
 GameEngine.prototype.recordTrip = function (name) {
@@ -237,7 +262,7 @@ GameEvents.updatelocation = function (data)
 {
     var p = game.players[game.players.indexOf(data['player'])];
     if (p) p.location = {lat:data['lat'], lng:data["lng"]};
-    console.log(data)
+    //console.log(data)
     for (var i in game.updateLocationCallbacks)
     {
         game.updateLocationCallbacks[i](data['player'],  {lat:data['lat'], lng:data["lng"]});
@@ -256,6 +281,58 @@ GameEvents.listPlayers = function (data)
             }
         }
 };
+
+GameEvents.updatePlayer = function (data)
+{
+    for (var p in game.players)
+    {
+        if (game.players[p].id == data["player"].id)
+        {
+            console.log("found player:" + game.players[p]);
+            game.players[p] = data["player"];
+            console.log("updating player");
+            console.log(data);
+        }
+    }
+    
+    for (var i in game.updatePlayerCallbacks)
+    {
+        game.updatePlayerCallbacks[i](data['player']);
+    }  
+};
+
+GameEvents.updateBattery = function (data)
+{
+    for (var i in game.updateBatteryCallbacks)
+    {
+        game.updateBatteryCallbacks[i](data);
+    }  
+}
+
+GameEvents.gpsStatus = function (data)
+{
+    console.log("GPS Status changed to ");
+    console.log(data);
+    for (var p in game.players)
+    {
+        if (game.players[p].id == data["player"].id)
+        {
+            if(data.status)
+            {
+                game.players[p].state = 1;
+            }
+            else
+            {
+                game.players[p].state = 0;
+            }
+        }
+    }
+    
+    for (var i in game.gpsStatusCallbacks)
+    {
+        game.gpsStatusCallbacks[i](data);
+    }  
+}
 
 GameEvents.listTargets = function (data)
 {

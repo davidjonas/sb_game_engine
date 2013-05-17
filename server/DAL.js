@@ -5,6 +5,7 @@ function _convertToPlayer(player){
     p.setId(player._id);
     p.setScore(player.score);
     p.setColor(player.color);
+    p.setSound(player.sound);
     return p;
 }
 
@@ -22,7 +23,7 @@ DAL.prototype.storePlayer = function (player, callback)
     this.db.players.find({nickname:player.nickname}, function (err, players) {
         if (players.length === 0)
         {
-            db.players.save({nickname:player.nickname, score:player.score, color:player.color}, function(err, saved) {
+            db.players.save({nickname:player.nickname, score:player.score, color:player.color, sound:player.sound}, function(err, saved) {
                 if (callback) callback(err, saved);
             });
         }
@@ -31,7 +32,31 @@ DAL.prototype.storePlayer = function (player, callback)
             if (callback) callback(err, players[0]);
         }
     });
+}
 
+//Updates a player.
+DAL.prototype.updatePlayer = function (player)
+{
+    var db = this.db;
+    this.db.players.find({nickname:player.nickname}, function (err, players) {
+        if (players.length > 0)
+        {
+            players[0].score = player.score;
+            players[0].color = player.color;
+            players[0].sound = player.sound;
+            
+            db.players.update({nickname:player.nickname}, players[0], function (err, players) {
+                if (!err)
+                {
+                    console.log("Updated player.");
+                }
+                else
+                {
+                    console.log("Error updating player.");
+                }
+            });
+        }
+    });
 }
 
 //step is a object of the type {tripId, playerId ,location, timestamp}

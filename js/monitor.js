@@ -167,12 +167,32 @@ function activateHudInterface()
     });
 };
 
-
+function refreshBattery(data)
+{
+    $('a.player').each(function (){
+      var id = $(this).attr("data-player");
+      if (id == data.player.id)
+      {
+        var indicator = $(this).siblings(".indicator")
+        
+        if (indicator.length == 0)
+        {
+          indicator = $('<span class="indicator">'+data.battery+'%</span>');
+          $(indicator).insertBefore($(this));
+        }else
+        {
+          $(indicator[0]).text(data.battery+"%");
+        }
+      }
+    });
+}
 
 function refreshPlayerList(player)
 {
     var list = ""
-        
+    
+    console.log("Refreshing player list.");
+    
     $('#playerList').html(list);
     
     if (game.players.length == 0)
@@ -183,7 +203,7 @@ function refreshPlayerList(player)
     
     for (var p in game.players)
     {
-            $('#playerList').append($("<p>" + game.players[p].nickname + ' </p>').append($('<a class="player" href="#" data-player="' +game.players[p].id+ '" >kill</a>')
+            $('#playerList').append($('<p class="state-'+game.players[p].state+'">' + game.players[p].nickname + ' </p>').append($('<a class="player" href="#" data-player="' +game.players[p].id+ '" >kill</a>')
                                                                                          .click(function () {
                                                                                             var id = $(this).attr("data-player");
                                                                                             for (var pl in game.players)
@@ -218,7 +238,8 @@ $(function ()
     // When a player joins or leaves: refresh the list and create the action links
     game.bind("playerJoined", refreshPlayerList);
     game.bind("playerDisconnected", refreshPlayerList);
-    
+    game.bind("updateBattery", refreshBattery);
+    game.bind("gpsStatus", refreshPlayerList);
     
     //Update memory information
     game.bind("memoryUsage", function(data){
@@ -290,10 +311,16 @@ $(function ()
             markerHash[player.id]  = gmaps.addMarker(player.nickname, location, gmaps.maps[0].map, "/images/geomarker.png");
             google.maps.event.addListener(markerHash[player.id] , 'click', function() {
               var send = function (p) {game.sendMessage(p, $('#textmessage').attr('value')); $('#send_msg').remove();};
-              var dialog = $('<div class="HUD" id="send_msg" style="top: '+mouse.x+'px; left: '+mouse.y+'px"><h2>Send Command</h2><div id="textmessageform"><input type="text" id="textmessage"/></div></div>');
+              var attach = function (p) {game.addSoundToPlayer(p, $('#attachsound #sound').attr('value')); $('#send_msg').remove();};
+              $("#send_msg").remove();
+              var dialog = $('<div class="HUD" id="send_msg" style="top: '+mouse.y+'px; left: '+mouse.x+'px"><h2>Send Command</h2><div id="textmessageform">Message: <input type="text" id="textmessage"/></div></div>');
               $('#main').append(dialog);
               var button = $('<input type="button" value="send" />').click(function (evt) {send(player)});
               $("#textmessageform").append(button);
+              var dialog2 = $('<div id="attachsound">Sound: <input type="text" id="sound"/></div>')
+              var button2 = $('<input type="button" value="attach" />').click(function (evt) {attach(player)});
+              $(dialog2).append(button2);
+              $('#send_msg').append(dialog2);
             });
         }
         else

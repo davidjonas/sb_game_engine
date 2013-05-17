@@ -67,6 +67,9 @@ io.sockets.on('connection', function(socket) {
                             else
                             {
                                 player.setId(saved["_id"]);
+                                player.setScore(saved['score']);
+                                player.setColor(saved['color']);
+                                player.setSound(saved['sound']);
                                 socket.emit('registerSuccess', formatPlayer(player));
                                 log("Assigned player id: " + player.getId());
                                 players.push(player);
@@ -233,8 +236,8 @@ io.sockets.on('connection', function(socket) {
         }
         else
         {
-            updateLocationHandler(player, {lat: data['lat'],lng:data['lng']}, socket, trip);
-            log("Got location of player " + player.getNickname() + " at Lat:" + data['lat'] + " Lng:" + data['lng']);
+            updateLocationHandler(player, {lat: data['lat'],lng:data['lng'], or:data['or']}, socket, trip);
+            log("Got location of player " + player.getNickname() + " at Lat:" + data['lat'] + " Lng:" + data['lng'] + " orientation: " + data['or']);
         }
     });
     
@@ -247,6 +250,38 @@ io.sockets.on('connection', function(socket) {
             }
         }
         io.sockets.emit('playerDisconnected', data);
+    });
+    
+    socket.on('updateBattery', function(data){
+        log("Battery update for player " + player.nickname + " - " +  data.battery );
+        player.setBattery(data.battery);
+        io.sockets.emit('updateBattery', {player: formatPlayer(player), battery: player.getBattery()});
+    });
+    
+    socket.on('addSoundToPlayer', function(data){
+        log("Adding sound "+ data.sound + " to player: " + data.playerId);
+        for (var p in players)
+        {
+            if (players[p].id == data.playerId)
+            {
+                players[p].setSound(data.sound);
+                db.updatePlayer(players[p]);
+                io.sockets.emit("updatePlayer", {player: formatPlayer(players[p])});
+            }
+        }
+    });
+    
+    socket.on('gpsStatus', function (data){
+        if (data.status)
+        {
+            player.setState(true);
+        }
+        else
+        {
+            player.setState(false);
+        }
+        io.sockets.emit('gpsStatus', {player: formatPlayer(player), status: data.status});
+        log("GPS signal " + player.nickname + " - " +  data.status );
     });
     
     socket.on('memoryUsage', function(){
@@ -312,11 +347,11 @@ function updateLocationHandler(player, location, socket, recordTrip)
 {
     if (socket)
     {
-        socket.broadcast.emit('updateLocation', {lat: location['lat'], lng: location['lng'], player: formatPlayer(player)});
+        socket.broadcast.emit('updateLocation', {lat: location['lat'], lng: location['lng'], or: location['or'], player: formatPlayer(player)});
     }
     else
     {
-        io.sockets.emit('updateLocation', {lat: location['lat'], lng: location['lng'], player: formatPlayer(player)});
+        io.sockets.emit('updateLocation', {lat: location['lat'], lng: location['lng'], or: location['or'], player: formatPlayer(player)});
     }
     
     player.setLocation(location);
@@ -324,17 +359,17 @@ function updateLocationHandler(player, location, socket, recordTrip)
     for (var t in targets)
     {
         var distance = calculateDistance(player.getLocation(), targets[t].location, 'm');
-        log("target at " + distance + " meters.");
+        //log("target at " + distance + " meters.");
         
         if (distance < range)
         {
-            log("found a target in range")
+            //log("found a target in range")
             var socks = io.sockets.clients();
             for (var s in socks)
             {
                 if (socks[s].id == player.getSocket())
                 {
-                    log("emitting in range event.")
+                    //log("emitting in range event.")
                     socks[s].emit("targetInRange", {target: targets[t], distance:distance});
                 }
             }
@@ -374,14 +409,10 @@ function calculateDistance (location1, location2, unit)
 {
     var p1 = new geoutils.GeoPoint(location1.lat, location1.lng);
     var p2 = new geoutils.GeoPoint(location2.lat, location2.lng);
-    log(location1);
-    log(location2);
-    log(p1);
-    log(p2);
     return gutils.distanceBetween(p1,p2)[unit];
 }
 
 function formatPlayer(player)
 {
-    return {id:player.getId(), nickname:player.getNickname(), location:player.getLocation(), score:player.getScore(), color:player.getColor(), drone: player.drone};
+    return {id:player.getId(), nickname:player.getNickname(), location:player.getLocation(), state:player.getState() ,score:player.getScore(), color:player.getColor(), battery:player.getBattery(), sound:player.getSound(), drone: player.drone};
 };

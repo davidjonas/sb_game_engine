@@ -153,7 +153,6 @@ a, a:active, a:visited, a:link
     display: block;
 }
 
-
 .vignette
 {
     box-shadow: inset 0px 0px 400px #000;
@@ -165,4 +164,19 @@ a, a:active, a:visited, a:link
     right: 0;
     z-index: 2;
     display:none;
+}
+
+p.state-0 *, p.state-0
+{
+    color: red !important;
+}
+
+p.state-1 *, p.state-1
+{
+    color: lightgreen !important;
+}
+
+#playerList p *
+{
+    padding: 0 10px;
 }
