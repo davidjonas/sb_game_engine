@@ -258,6 +258,18 @@ io.sockets.on('connection', function(socket) {
         io.sockets.emit('updateBattery', {player: formatPlayer(player), battery: player.getBattery()});
     });
     
+    socket.on('updateTarget', function(data){
+        log("updating target:" + data.target.value);
+        for (var t in targets){
+            if (targets[t]._id == data.target._id)
+            {
+                targets[t] = data.target;
+            }
+        }
+        db.updateTarget(data.target);
+        io.sockets.emit("targetUpdated", data.target);
+    });
+    
     socket.on('addSoundToPlayer', function(data){
         log("Adding sound "+ data.sound + " to player: " + data.playerId);
         for (var p in players)
@@ -266,7 +278,7 @@ io.sockets.on('connection', function(socket) {
             {
                 players[p].setSound(data.sound);
                 db.updatePlayer(players[p]);
-                io.sockets.emit("updatePlayer", {player: formatPlayer(players[p])});
+                io.sockets.emit("playerUpdated", {player: formatPlayer(players[p])});
             }
         }
     });

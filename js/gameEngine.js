@@ -2,7 +2,7 @@
 
 //importing socket.io
 var script = document.createElement('script');
-script.src = 'http://mediawerf.dyndns.org/js/socket.io.js';
+script.src = 'http://outside.mediawerf.net/js/socket.io.js';
 script.type = 'text/javascript';
 script.defer = false;
 $('head').prepend(script);
@@ -18,7 +18,7 @@ Array.prototype.indexOf = function(obj, start) {
 //TODO: Add a job to check the current list of players regularly just in case it got out of date.y
 
 var GameEngine = function () {
-    this.server = 'http://mediawerf.dyndns.org:7080'
+    this.server = 'http://outside.mediawerf.net:7080'
     this.socket = io.connect(this.server);
     this.players = [];
     this.targets = [];
@@ -37,9 +37,10 @@ var GameEngine = function () {
     this.playerInRangeCallbacks =[];
     this.listTripsCallbacks =[];
     this.textMessageCallbacks=[];
-    this.updatePlayerCallbacks = [];
+    this.playerUpdatedCallbacks = [];
     this.updateBatteryCallbacks = [];
     this.gpsStatusCallbacks = [];
+    this.targetUpdatedCallbacks = [];
     
     
     
@@ -61,9 +62,10 @@ var GameEngine = function () {
     this.socket.on('listTargets', GameEvents.listTargets);
     this.socket.on('requestRecording', GameEvents.requestRecording);
     this.socket.on('textMessage', GameEvents.textMessage);
-    this.socket.on('updatePlayer', GameEvents.updatePlayer);
+    this.socket.on('playerUpdated', GameEvents.playerUpdated);
     this.socket.on('updateBattery', GameEvents.updateBattery);
     this.socket.on('gpsStatus', GameEvents.gpsStatus);
+    this.socket.on('targetUpdated', GameEvents.targetUpdated);
     
     //get current players
     this.socket.emit("getPlayers");
@@ -131,8 +133,8 @@ GameEngine.prototype.bind = function (eventName, callback)
             this.textMessageCallbacks.push(callback);
             break;
         
-        case 'updatePlayer':
-            this.updatePlayerCallbacks.push(callback);
+        case 'playerUpdated':
+            this.playerUpdatedCallbacks.push(callback);
             break;
         
         case 'updateBattery':
@@ -141,6 +143,10 @@ GameEngine.prototype.bind = function (eventName, callback)
         
         case 'gpsStatus':
             this.gpsStatusCallbacks.push(callback);
+            break;
+          
+        case 'targetUpdated':
+            this.targetUpdatedCallbacks.push(callback);
             break;
         
         default:
@@ -212,6 +218,12 @@ GameEngine.prototype.removeTarget = function(target)
 {
     console.log("Removing target " + target.value);
     this.socket.emit('removeTarget', {target: target});
+}
+
+GameEngine.prototype.updateTarget = function(target)
+{
+     console.log("Updating target.");
+     this.socket.emit('updateTarget', {target: target});
 }
 
 GameEngine.prototype.startTracking = function ()
@@ -427,7 +439,8 @@ GameEvents.targetAdded = function (data)
 }
 
 GameEvents.targetRemoved = function (data)
-{   
+{
+    console.log("A target was removed.")
     for (var t in game.targets)
     {
         if (game.targets[t]._id == data._id)
@@ -464,6 +477,25 @@ GameEvents.requestRecording = function (data)
     {
         game.recordTrip(data.tripId);
     }
+}
+
+GameEvents.targetUpdated = function (data)
+{
+     for (var t in game.targets)
+    {
+        if (game.targets[t]._id == data._id)
+        {
+            console.log("found target:" + game.targets[t]);
+            game.targets[t] = data;
+            console.log("updating target:");
+            console.log(data);
+        }
+    }
+    
+    for (var i in game.updateTargetCallbacks)
+    {
+        game.updateTargetCallbacks[i](data['target']);
+    }  
 }
 
 GameEvents.textMessage = function (data)

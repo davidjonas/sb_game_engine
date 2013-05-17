@@ -282,10 +282,6 @@ $(function ()
         if (targetHash[target._id] != undefined)
           {
             console.log(targetHash[target._id]);
-            //TODO: Everything works till here but the marker does not disappear. It just becomes a bit brighter.
-            //There is another weird rendering of the marker on the bottom that can be seen by running:
-            //targetHash['51839c550dbda5ec5a00000a'].setAnimation(google.maps.Animation.BOUNCE);
-            //Maybe Markers are being added too early.
             targetHash[target._id].setMap(null);
             delete targetHash[target._id];
           }

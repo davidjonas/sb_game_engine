@@ -103,6 +103,34 @@ DAL.prototype.removeTarget = function (target)
                       });
 }
 
+DAL.prototype.updateTarget = function (target)
+{
+    var db = this.db;
+    this.db.targets.find({_id:new db.ObjectId(target._id)}, function (err, targets) {
+        if (targets.length > 0)
+        {
+            targets[0].type = target.type;
+            targets[0].range = target.range;
+            targets[0].value = target.value;
+            
+            db.targets.update({_id:new db.ObjectId(target._id)}, targets[0], function (err, targetsUpdated) {
+                if (!err)
+                {
+                    console.log("Updated target.");
+                }
+                else
+                {
+                    console.log("Error updating target.");
+                }
+            });
+        }
+        else
+        {
+            console.log("did not find the target to update");
+        }
+    });
+}
+
 DAL.prototype.getTargets = function(callback) {
     this.db.targets.find(callback);
 }
