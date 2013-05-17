@@ -1,4 +1,3 @@
 #!/bin/sh
 
-cd ~/mongoBackup
-mongorestore
+cd ~/mongoBackup; mongorestore --drop
