@@ -16,6 +16,30 @@ function DAL()
     this.db = require("mongojs").connect(this.databaseUrl, this.collections);
 }
 
+DAL.prototype.resetAllScores = function ()
+{
+    var db = this.db;
+    this.db.players.find(function (err, players) {
+        if (players.length > 0 && !err)
+        {
+            for (var p in players)
+            {
+                players[p].score = 0;
+                db.players.update({nickname:players[p].nickname}, players[p], function (err, players) {
+                    if (!err)
+                    {
+                        console.log("Updated player.");
+                    }
+                    else
+                    {
+                        console.log("Error updating player.");
+                    }
+                });
+            }
+        }
+    });
+};
+
 //player is a Player object, calbeck is a function to run once the player is saved
 DAL.prototype.storePlayer = function (player, callback)
 {

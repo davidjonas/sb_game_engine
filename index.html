@@ -44,6 +44,7 @@
 			
 			<div class="HUD" id="players">
 				<h2>Players online</h2>
+				<div id="resetScores" onclick="game.resetScores();">Reset all scores</div>
 				<div id="playerList">
 					No players connected.
 				</div>
@@ -53,6 +54,13 @@
 				<h2>Trips</h2>
 				<div id="tripsList">
 					<a href="#" id="refresh" onclick="game.listTrips(); return false;">Refresh</a>
+				</div>
+			</div>
+			
+			<div class="HUD" id="debug">
+				<h2>Debug Server Log</h2>
+				<div id="debugMode" onclick="game.toggleDebug(); if(game.debug){$('#debugMode').css('backgound-color', 'green')} else {$('#debugMode').css('backgound-color', '#44444')}">Toggle</div>
+				<div id="DebugServerLog">
 				</div>
 			</div>
 		</div>

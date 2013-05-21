@@ -15,11 +15,11 @@ Array.prototype.indexOf = function(obj, start) {
      return -1;
 }
 
-//TODO: Add a job to check the current list of players regularly just in case it got out of date.y
-
 var GameEngine = function () {
     this.server = 'http://outside.mediawerf.net:7080'
     this.socket = io.connect(this.server);
+    this.firstData = true;
+    this.debug = false;
     this.players = [];
     this.targets = [];
     this.trips = [];
@@ -41,6 +41,9 @@ var GameEngine = function () {
     this.updateBatteryCallbacks = [];
     this.gpsStatusCallbacks = [];
     this.targetUpdatedCallbacks = [];
+    this.playerScoredCallbacks = [];
+    this.debugCallbacks = [];
+    this.onDataAvailableCallbacks = [];
     
     
     
@@ -66,10 +69,19 @@ var GameEngine = function () {
     this.socket.on('updateBattery', GameEvents.updateBattery);
     this.socket.on('gpsStatus', GameEvents.gpsStatus);
     this.socket.on('targetUpdated', GameEvents.targetUpdated);
+    this.socket.on('playerScored', GameEvents.playerScored);
+    this.socket.on('debug', GameEvents.debug);
     
     //get current players
     this.socket.emit("getPlayers");
-    this.listTargets();
+    //this.listTargets();
+}
+
+GameEngine.prototype.toggleDebug = function ()
+{
+     this.debug = !this.debug;
+     console.log("setting debug to: " + this.debug);
+     this.socket.emit("debugMode", {"mode":this.debug});
 }
 
 GameEngine.prototype.getPlayers = function ()
@@ -149,15 +161,28 @@ GameEngine.prototype.bind = function (eventName, callback)
             this.targetUpdatedCallbacks.push(callback);
             break;
         
+        case 'playerScored':
+            this.playerScoredCallbacks.push(callback);
+            break;
+          
+        case 'debug':
+            this.debugCallbacks.push(callback);
+            break;
+          
+        case 'onDataAvailable':
+            this.onDataAvailableCallbacks.push(callback);
+            break;
+          
         default:
             this.socket.on(eventName, callback)
             break;
     }
 };
 
-GameEngine.prototype.registerPlayer = function (nickname)
+GameEngine.prototype.registerPlayer = function (nickname, drone)
 {
-    this.socket.emit('register', {nickname: nickname});
+     drone = drone || false;
+     this.socket.emit('register', {nickname: nickname, drone:drone});
 };
 
 GameEngine.prototype.addSoundToPlayer = function (player, sound)
@@ -224,6 +249,18 @@ GameEngine.prototype.updateTarget = function(target)
 {
      console.log("Updating target.");
      this.socket.emit('updateTarget', {target: target});
+}
+
+GameEngine.prototype.resetScores = function()
+{
+     console.log("resetting scores.");
+     this.socket.emit("resetScores");
+}
+
+GameEngine.prototype.resetScore = function(nickname)
+{
+     console.log("resetting score of "+nickname+".");
+     this.socket.emit("resetScore", {nickname: nickname});
 }
 
 GameEngine.prototype.startTracking = function ()
@@ -295,7 +332,7 @@ GameEvents.listPlayers = function (data)
         }
 };
 
-GameEvents.updatePlayer = function (data)
+GameEvents.playerUpdated = function (data)
 {
     for (var p in game.players)
     {
@@ -308,11 +345,21 @@ GameEvents.updatePlayer = function (data)
         }
     }
     
-    for (var i in game.updatePlayerCallbacks)
+    for (var i in game.playerUpdatedCallbacks)
     {
-        game.updatePlayerCallbacks[i](data['player']);
+        console.log("Running player updated callbacks.");
+        game.playerUpdatedCallbacks[i](data['player']);
     }  
 };
+
+GameEvents.playerScored = function (data)
+{
+     console.log("Player " + data["player"].nickname + " scored.")
+     for (var i in game.playerScoredCallbacks)
+    {
+        game.playerScoredCallbacks[i](data['player']);
+    }  
+}
 
 GameEvents.updateBattery = function (data)
 {
@@ -356,6 +403,14 @@ GameEvents.listTargets = function (data)
             for (var i in game.targetAddedCallbacks)
             {
                 game.targetAddedCallbacks[i](data.targets[t]);
+            }
+        }
+        if (game.firstData)
+        {
+          for (var i in game.onDataAvailableCallbacks)
+            {
+               game.onDataAvailableCallbacks[i]();
+               game.firstData = false;
             }
         }
 };
@@ -476,6 +531,14 @@ GameEvents.requestRecording = function (data)
     if (game.acceptRecordingRequests)
     {
         game.recordTrip(data.tripId);
+    }
+}
+
+GameEvents.debug = function (data)
+{
+     for (var i in game.debugCallbacks)
+    {
+        game.debugCallbacks[i](data.message);
     }
 }
 

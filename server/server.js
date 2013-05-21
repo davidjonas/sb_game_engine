@@ -11,6 +11,8 @@ var express = require('express'),
         
 var gutils = new geoutils.GeoUtils();
 var range = 100; //detection range in meters
+var objectiveRange = 10; //Range to aquire an objective
+var maxScore = 14;
 
 var db = new DAL.DAL();
 db.getTargets(function (err, targs) {
@@ -52,11 +54,16 @@ io.sockets.on('connection', function(socket) {
     var registered = false;
     var trip = null;
     
-    function register(nickname)
+    function register(nickname, drone)
     {
+        drone = drone || false;
+        if(drone)
+        {
+            log("Registering a drone.");
+        }
         player = new Player.Player(nickname);
         player.setSocket(socket.id);
-        log("Created player: " + player.nickname);
+        log("Created player: " + player.nickname + " Drone = " + drone);
         db.storePlayer(player, function (err, saved)
                         {
                             if (err || !saved)
@@ -69,7 +76,13 @@ io.sockets.on('connection', function(socket) {
                                 player.setId(saved["_id"]);
                                 player.setScore(saved['score']);
                                 player.setColor(saved['color']);
-                                player.setSound(saved['sound']);
+                                if(drone == false)
+                                    player.setSound("http://outside.mediawerf.net/GameLoops/interference.ogg");
+                                else
+                                {
+                                    player.setSound(saved['sound']);
+                                }
+                                player.drone = drone;
                                 socket.emit('registerSuccess', formatPlayer(player));
                                 log("Assigned player id: " + player.getId());
                                 players.push(player);
@@ -83,12 +96,16 @@ io.sockets.on('connection', function(socket) {
     socket.on('register', function(data) {
         if (data)
         {
-            register(data["nickname"]);
+            register(data["nickname"], data["drone"]);
         }
         else
         {
             register("Guest"+players.length);
         }
+    });
+    
+    socket.on('debugMode', function (data){
+        debug = data.mode;        
     });
     
     socket.on('listTargets', function ()
@@ -300,6 +317,31 @@ io.sockets.on('connection', function(socket) {
         socket.emit('memoryUsage', process.memoryUsage());  
     });
     
+    socket.on("resetScores", function () {
+        log("Resetting scores and broadcasting...");
+        for (var p in players)
+        {
+            players[p].setScore(0);
+            players[p].objectives = [];
+            io.sockets.emit("playerUpdated", {player: players[p]});
+        }
+        db.resetAllScores();
+    });
+    
+    socket.on("resetScore", function (data) {
+        log("Resetting score of "+data.nickname+" and broadcasting...");
+        for (var p in players)
+        {
+            if (players[p].nickname == data.nickname)
+            {
+                players[p].setScore(0);
+                players[p].objectives = [];
+                db.updatePlayer(players[p]);
+                io.sockets.emit("playerUpdated", {player: players[p]});
+            }
+        }
+    });
+    
     socket.on("requestRefreshAll", function () {
         log("Mass refresh request came in. Broadcasting...");
         io.sockets.emit("refresh");
@@ -383,6 +425,38 @@ function updateLocationHandler(player, location, socket, recordTrip)
                 {
                     //log("emitting in range event.")
                     socks[s].emit("targetInRange", {target: targets[t], distance:distance});
+                    //Scoring system
+                    if (targets[t].type == "objective" && distance <= objectiveRange && !player.drone)
+                    {
+                        //log("Score target in range");
+                        var scored = player.aquireObjective(targets[t]);
+                        if (scored && player.getScore() <= maxScore)
+                        {
+                            db.updatePlayer(player);
+                            io.sockets.emit("playerUpdated", {player: formatPlayer(player)});
+                            io.sockets.emit("playerScored", {player: formatPlayer(player)});
+                            if (player.getScore() == maxScore)
+                            {
+                                socket.emit("textMessage", {message:"/say::You have discovered all the hotspots. Congratulations."});
+                                socket.broadcast.emit("textMessage", {message:"/say::" +player.nickname+ " has discovered all the hotspots."});
+                                log("Player " + player.nickname + " won. New score: " + player.getScore());
+                            }
+                            else
+                            {
+                                var togo = maxScore - player.getScore();
+                                if (togo > 1)
+                                {
+                                    socket.emit("textMessage", {message:"/say::You have discovered one of the hotspots. There is only " + togo + " more."});
+                                }
+                                else
+                                {
+                                    socket.emit("textMessage", {message:"/say::You have discovered one of the hotspots. There are " + togo + " more to find."});
+                                }
+                                socket.broadcast.emit("textMessage", {message:"/say::" +player.nickname+ " has discovered one of the hotspots."});
+                                log("Player scored. New score: " + player.getScore());
+                            }
+                        }
+                    }
                 }
             }
         }

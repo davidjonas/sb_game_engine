@@ -203,7 +203,7 @@ function refreshPlayerList(player)
     
     for (var p in game.players)
     {
-            $('#playerList').append($('<p class="state-'+game.players[p].state+'">' + game.players[p].nickname + ' </p>').append($('<a class="player" href="#" data-player="' +game.players[p].id+ '" >kill</a>')
+            $('#playerList').append($('<p class="state-'+game.players[p].state+'">' + game.players[p].nickname + ' </p>').append($('<a class="player" href="#" data-player="' +game.players[p].id+ '" >kill</a> <a href="#" class="score" title="Reset this score" alt="Reset this score" onClick="game.resetScore(\''+game.players[p].nickname+'\')">'+game.players[p].score+'</a>')
                                                                                          .click(function () {
                                                                                             var id = $(this).attr("data-player");
                                                                                             for (var pl in game.players)
@@ -290,6 +290,16 @@ $(function ()
             console.log("Could not find targetHash "+target._id);
           }
     });
+    
+    game.bind("debug", function (message)
+    {
+      $("#DebugServerLog").append($("<p>"+message+"</p>"));
+    });
+    
+    game.bind("playerUpdated", function(player){
+      refreshPlayerList(player);
+    });
+    
     
     game.listTargets();
     

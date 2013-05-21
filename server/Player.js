@@ -10,6 +10,7 @@ function Player (nickname) {
 	this.battery = 0;
 	this.sound = "";
 	this.color = Math.floor((Math.random()*360)+0);
+	this.objectives = [];
 	//Is this player real or a automated drone?
 	this.drone = false;
 	//Limit to where the drone should walk around
@@ -24,7 +25,7 @@ Player.prototype.toString = function(){return this.nickname};
 Player.prototype.addScore 		= function addScore(value){this.score += value;};
 Player.prototype.drainScore 		= function drainScore(value){ this.score -= value; };
 
-Player.prototype.getLocation		= function () {return {lat: this.lat, lng: this.lng}; };
+Player.prototype.getLocation		= function () {return {lat: this.lat, lng: this.lng, or:this.or}; };
 Player.prototype.setLocation 		= function updateLocation(location){ this.lng = location.lng; this.lat = location.lat; this.or = location.or};
 
 Player.prototype.getId 			= function (){ return this.id; };
@@ -77,6 +78,28 @@ Player.prototype.step = function (size)
 	}
 	this.setLocation({lat:newLat, lng:newLng});
 };
+
+Player.prototype.aquireObjective = function (target)
+{
+	var found = false;
+	for (o in this.objectives)
+	{
+		if (this.objectives[o]._id == target._id)
+		{
+			found = true;
+		}
+	}
+	if (!found)
+	{
+		this.objectives.push(target);
+		this.addScore(1);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
 
 Player.prototype.setDroneFrequency 	= function (value){this.frequency = value};
 

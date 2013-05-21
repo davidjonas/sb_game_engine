@@ -90,7 +90,7 @@ a, a:active, a:visited, a:link
 
 .HUD.minimized
 {
-    height: 20px;
+    height: 20px !important;
     overflow: hidden;
     opacity:0.5;
 }
@@ -174,6 +174,32 @@ p.state-0 *, p.state-0
 p.state-1 *, p.state-1
 {
     color: lightgreen !important;
+}
+
+#playerList
+{
+    margin-top: 20px;
+}
+
+#resetScores, #debugMode
+{
+    text-decoration: none;
+    padding: 4px;
+    background-color: #444;
+    border: 1px solid #222;
+    display: block;
+    position: absolute;
+    padding: 3px;
+    top: 25px;
+    right:10px;
+    cursor: pointer;
+}
+
+#debug
+{
+    height: 200px;
+    overflow-y: scroll;
+    width: 300px;
 }
 
 #playerList p *
