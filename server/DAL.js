@@ -6,6 +6,7 @@ function _convertToPlayer(player){
     p.setScore(player.score);
     p.setColor(player.color);
     p.setSound(player.sound);
+    p.objectives = player.objectives;
     return p;
 }
 
@@ -28,7 +29,7 @@ DAL.prototype.resetAllScores = function ()
                 db.players.update({nickname:players[p].nickname}, players[p], function (err, players) {
                     if (!err)
                     {
-                        console.log("Updated player.");
+                        //console.log("Updated player.");
                     }
                     else
                     {
@@ -47,7 +48,7 @@ DAL.prototype.storePlayer = function (player, callback)
     this.db.players.find({nickname:player.nickname}, function (err, players) {
         if (players.length === 0)
         {
-            db.players.save({nickname:player.nickname, score:player.score, color:player.color, sound:player.sound}, function(err, saved) {
+            db.players.save({nickname:player.nickname, score:player.score, objectives: player.objectives, color:player.color, sound:player.sound}, function(err, saved) {
                 if (callback) callback(err, saved);
             });
         }
@@ -68,11 +69,12 @@ DAL.prototype.updatePlayer = function (player)
             players[0].score = player.score;
             players[0].color = player.color;
             players[0].sound = player.sound;
+            players[0].objectives=player.objectives;
             
             db.players.update({nickname:player.nickname}, players[0], function (err, players) {
                 if (!err)
                 {
-                    console.log("Updated player.");
+                    //console.log("Updated player.");
                 }
                 else
                 {
@@ -140,7 +142,7 @@ DAL.prototype.updateTarget = function (target)
             db.targets.update({_id:new db.ObjectId(target._id)}, targets[0], function (err, targetsUpdated) {
                 if (!err)
                 {
-                    console.log("Updated target.");
+                    //console.log("Updated target.");
                 }
                 else
                 {

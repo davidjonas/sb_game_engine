@@ -80,7 +80,7 @@ var GameEngine = function () {
 GameEngine.prototype.toggleDebug = function ()
 {
      this.debug = !this.debug;
-     console.log("setting debug to: " + this.debug);
+     //console.log("setting debug to: " + this.debug);
      this.socket.emit("debugMode", {"mode":this.debug});
 }
 
@@ -195,7 +195,7 @@ GameEngine.prototype.recordTrip = function (name) {
 };
 
 GameEngine.prototype.requestRecording = function(playerId, tripId){
-    console.log("Requesting recording of " + tripId+ " for " + playerId);
+    //console.log("Requesting recording of " + tripId+ " for " + playerId);
     this.socket.emit('requestRecording', {tripId: tripId, playerId:playerId});
 }
 
@@ -210,56 +210,56 @@ GameEngine.prototype.sendLocation = function (location)
 
 GameEngine.prototype.killPlayer = function(player)
 {
-    console.log("killing " + player.nickname);
+    //console.log("killing " + player.nickname);
     this.socket.emit('killPlayer', player);
 }
 
 GameEngine.prototype.sendMessage = function(player, message)
 {
-    console.log("sending message to: " + player.nickname);
+    //console.log("sending message to: " + player.nickname);
     this.socket.emit("sendTextMessageTo", {player: player, message: message});
 }
 
 GameEngine.prototype.broadcastMessage = function (message)
 {
-    console.log("sending broadcast message");
+    //console.log("sending broadcast message");
     this.socket.emit("sendBroadcastTextMessage", {message: message});
 }
 
 GameEngine.prototype.addTarget = function(lat, lng, value, range, type)
 {
     type = type || "normal";
-    console.log("Adding new target");
+    //console.log("Adding new target");
     this.socket.emit('addTarget', {location:{lat: lat, lng:lng}, value:value, range:range, type:type});
 }
 
 GameEngine.prototype.listTargets = function ()
 {
-    console.log("Asking for target listing.");
+    //console.log("Asking for target listing.");
     this.socket.emit('listTargets');
 }
 
 GameEngine.prototype.removeTarget = function(target)
 {
-    console.log("Removing target " + target.value);
+    //console.log("Removing target " + target.value);
     this.socket.emit('removeTarget', {target: target});
 }
 
 GameEngine.prototype.updateTarget = function(target)
 {
-     console.log("Updating target.");
+     //console.log("Updating target.");
      this.socket.emit('updateTarget', {target: target});
 }
 
 GameEngine.prototype.resetScores = function()
 {
-     console.log("resetting scores.");
+     //console.log("resetting scores.");
      this.socket.emit("resetScores");
 }
 
 GameEngine.prototype.resetScore = function(nickname)
 {
-     console.log("resetting score of "+nickname+".");
+     //console.log("resetting score of "+nickname+".");
      this.socket.emit("resetScore", {nickname: nickname});
 }
 
@@ -273,35 +273,35 @@ GameEngine.prototype.startTracking = function ()
         if (navigator.geolocation)
         {
             locationHandler.posId = navigator.geolocation.watchPosition(locationHandler.handleLocation, locationHandler.posError ,{ maximumAge: 3000, timeout: 5000, enableHighAccuracy: true });
-            console.log("Aquiring Location...");
+            //console.log("Aquiring Location...");
         }
         else
         {
-            console.log("Geolocation is not supported by this browser.");
+            //console.log("Geolocation is not supported by this browser.");
         }
     };
     
     locationHandler.handleLocation = function (position)
     {
-        console.log("new location: (" + position.coords.latitude + ", " + position.coords.longitude + ")");
+        //console.log("new location: (" + position.coords.latitude + ", " + position.coords.longitude + ")");
         locationHandler.lat = position.coords.latitude;
         locationHandler.lon = position.coords.longitude;
         game.sendLocation({lat: locationHandler.lat, lng: locationHandler.lon});
     }
     
-    console.log("initialiing geolocation");
+    //console.log("initialiing geolocation");
     locationHandler.init();
 }
 
 GameEngine.prototype.requestRefreshAll = function ()
 {
-    console.log("Requesting mass refresh.");
+    //console.log("Requesting mass refresh.");
     this.socket.emit("requestRefreshAll");
 };
 
 GameEngine.prototype.listTrips = function ()
 {
-    console.log("Asking for the list of trips.");
+    //console.log("Asking for the list of trips.");
     this.socket.emit("listTrips");
 }
 
@@ -312,7 +312,7 @@ GameEvents.updatelocation = function (data)
 {
     var p = game.players[game.players.indexOf(data['player'])];
     if (p) p.location = {lat:data['lat'], lng:data["lng"]};
-    //console.log(data)
+    ////console.log(data)
     for (var i in game.updateLocationCallbacks)
     {
         game.updateLocationCallbacks[i](data['player'],  {lat:data['lat'], lng:data["lng"]});
@@ -338,26 +338,23 @@ GameEvents.playerUpdated = function (data)
     {
         if (game.players[p].id == data["player"].id)
         {
-            console.log("found player:" + game.players[p]);
             game.players[p] = data["player"];
-            console.log("updating player");
-            console.log(data);
         }
     }
     
     for (var i in game.playerUpdatedCallbacks)
     {
-        console.log("Running player updated callbacks.");
+        //console.log("Running player updated callbacks.");
         game.playerUpdatedCallbacks[i](data['player']);
     }  
 };
 
 GameEvents.playerScored = function (data)
 {
-     console.log("Player " + data["player"].nickname + " scored.")
+     //console.log("Player " + data["player"].nickname + " scored.")
      for (var i in game.playerScoredCallbacks)
     {
-        game.playerScoredCallbacks[i](data['player']);
+        game.playerScoredCallbacks[i](data['player'], data['targetIndex']);
     }  
 }
 
@@ -371,8 +368,8 @@ GameEvents.updateBattery = function (data)
 
 GameEvents.gpsStatus = function (data)
 {
-    console.log("GPS Status changed to ");
-    console.log(data);
+    //console.log("GPS Status changed to ");
+    //console.log(data);
     for (var p in game.players)
     {
         if (game.players[p].id == data["player"].id)
@@ -436,12 +433,12 @@ GameEvents.playerJoined = function (data)
 
 GameEvents.playerDisconnected = function (data)
 {
-    console.log("Player disconnected");
+    //console.log("Player disconnected");
     for (player in game.players)
     {
         if (game.players[player].id == data.id)
         {
-            console.log("Deleting player");
+            //console.log("Deleting player");
             game.players.splice(player, 1);
         }   
     }
@@ -495,7 +492,7 @@ GameEvents.targetAdded = function (data)
 
 GameEvents.targetRemoved = function (data)
 {
-    console.log("A target was removed.")
+    //console.log("A target was removed.")
     for (var t in game.targets)
     {
         if (game.targets[t]._id == data._id)
@@ -548,10 +545,10 @@ GameEvents.targetUpdated = function (data)
     {
         if (game.targets[t]._id == data._id)
         {
-            console.log("found target:" + game.targets[t]);
+            //console.log("found target:" + game.targets[t]);
             game.targets[t] = data;
-            console.log("updating target:");
-            console.log(data);
+            //console.log("updating target:");
+            //console.log(data);
         }
     }
     

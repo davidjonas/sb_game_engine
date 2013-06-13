@@ -12,7 +12,9 @@ var express = require('express'),
 var gutils = new geoutils.GeoUtils();
 var range = 100; //detection range in meters
 var objectiveRange = 10; //Range to aquire an objective
-var maxScore = 14;
+var maxScore = 13;
+//TODO:this should reflect the total objectives in one "game area" instead of total objectives in general??
+var totalObjectives = 0;
 
 var db = new DAL.DAL();
 db.getTargets(function (err, targs) {
@@ -21,7 +23,14 @@ db.getTargets(function (err, targs) {
         console.log("Error fetching targets from DB.");
     }
     targets = targs;
-    log("list of targets aquired: " + targets);
+    for (var ob in targets)
+    {
+        if (targets[ob].type == "objective")
+        {
+            totalObjectives++;
+        }
+    }
+    log("list of targets aquired with "+totalObjectives+" objectives: " + targets);
 });
 
 //port to listen can be set through command line argument by running 'node server.js [port]' (it defaults to 7080)
@@ -76,6 +85,9 @@ io.sockets.on('connection', function(socket) {
                                 player.setId(saved["_id"]);
                                 player.setScore(saved['score']);
                                 player.setColor(saved['color']);
+                                player.objectives = saved.objectives;
+                                log("printing saved objectives");
+                                log(player.objectives);
                                 if(drone == false)
                                     player.setSound("http://outside.mediawerf.net/GameLoops/interference.ogg");
                                 else
@@ -117,6 +129,10 @@ io.sockets.on('connection', function(socket) {
                     var target=data;
                     targets.push(data);
                     db.addTarget(data);
+                    if (target.type == "objective")
+                    {
+                        totalObjectives++;
+                    }
                     io.sockets.emit("targetAdded", data);
     });
     
@@ -129,6 +145,10 @@ io.sockets.on('connection', function(socket) {
             {
                 log("found the target on the list. deleting.")
                 targets.splice(i, 1);
+                if (data.target.type == "objective")
+                {
+                    totalObjectives--;
+                }
             }
         }
         log("Emitting remove broadcast");
@@ -410,11 +430,16 @@ function updateLocationHandler(player, location, socket, recordTrip)
     
     player.setLocation(location);
     
+    var objectiveCount =0;
+    
     for (var t in targets)
     {
         var distance = calculateDistance(player.getLocation(), targets[t].location, 'm');
         //log("target at " + distance + " meters.");
-        
+        if (targets[t].type == "objective")
+        {
+            objectiveCount++;
+        }
         if (distance < range)
         {
             //log("found a target in range")
@@ -434,7 +459,8 @@ function updateLocationHandler(player, location, socket, recordTrip)
                         {
                             db.updatePlayer(player);
                             io.sockets.emit("playerUpdated", {player: formatPlayer(player)});
-                            io.sockets.emit("playerScored", {player: formatPlayer(player)});
+                            //TODO: Total targets and targetIndex makes no sense here it's just a temporary solution.
+                            io.sockets.emit("playerScored", {player: formatPlayer(player), targetIndex:objectiveCount, totalObjectives:totalObjectives});
                             if (player.getScore() == maxScore)
                             {
                                 socket.emit("textMessage", {message:"/say::You have discovered all the hotspots. Congratulations."});
@@ -444,7 +470,7 @@ function updateLocationHandler(player, location, socket, recordTrip)
                             else
                             {
                                 var togo = maxScore - player.getScore();
-                                if (togo > 1)
+                                if (togo == 1)
                                 {
                                     socket.emit("textMessage", {message:"/say::You have discovered one of the hotspots. There is only " + togo + " more."});
                                 }
@@ -462,6 +488,8 @@ function updateLocationHandler(player, location, socket, recordTrip)
         }
     }
     
+    var playerRanges = []
+    
     for (var p in players)
     {
         if(players[p] != player)
@@ -478,12 +506,34 @@ function updateLocationHandler(player, location, socket, recordTrip)
                     if (socks[s].id == player.getSocket())
                     {
                         log("emitting in range event.")
-                        socks[s].emit("playerInRange", {player: players[p], distance:distance});
+                        //TODO: I will for now send only the closest player in range instead of all of them. this has to go back in the future.
+                        //socks[s].emit("playerInRange", {player: players[p], distance:distance});
+                        playerRanges.push({player: players[p], distance:distance});
                     }
                 }
             }   
         }
     }
+    
+    //TODO: see the last todo, This code sends only the closest player
+    var closest = null;
+    for (var pr in playerRanges)
+    {
+        if (closest === null)
+        {
+            closest = playerRanges[pr];
+        }
+        else if (closest.distance > playerRanges[pr].distance)
+        {
+            closest = playerRanges[pr];
+        }
+    }
+    
+    if (closest !== null)
+    {
+        socks[s].emit("playerInRange", closest);
+    }
+    //end of closest player block
     
     if (recordTrip !== null)
     {
